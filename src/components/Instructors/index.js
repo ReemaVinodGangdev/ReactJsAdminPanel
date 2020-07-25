@@ -21,7 +21,8 @@ class Instructor extends Component {
       showAlert:false,
       avatar:"",
       from_time:'',
-      to_time:''
+      to_time:'',
+      phone:""
     };
   }
  
@@ -55,7 +56,10 @@ class Instructor extends Component {
       alert("Please enter from time")
     }else if(this.state.to_time==""){
       alert("Please enter to_time")
-    }else{
+    }else if(this.state.phone==""){
+      alert("Please enter phone")
+    }
+    else{
       this.state.selectedUid?
       this.edit():
       this.writeUserData()
@@ -63,7 +67,7 @@ class Instructor extends Component {
    
   }
   writeUserData(){
-    const{name,address,latitude,longitude,from_time,to_time}=this.state
+    const{name,address,latitude,longitude,from_time,to_time,phone}=this.state
   
     this.setState({
         loading:true
@@ -76,7 +80,8 @@ class Instructor extends Component {
       longitude:longitude,
       avatar:this.state.avatar,
       from_time:from_time,
-      to_time:to_time
+      to_time:to_time,
+      phone:phone
     })
     .then(() => 
     {  
@@ -100,7 +105,7 @@ class Instructor extends Component {
     this.props.firebase.instructors().off();
   }
   renderTableHeader() {
-    let header = ['Avatar','Name','Address','Latitude','Longitude','Availability','Action']
+    let header = ['Avatar','Name','Address','Latitude','Longitude','Availability','Phone','Action']
     return header.map((key, index) => {
        return <th key={index}>{key.toUpperCase()}</th>
     })
@@ -138,7 +143,8 @@ delete(){
       longitude:0.0,
       avatar:"",
       from_time:'',
-      to_time:''
+      to_time:'',
+      phone:""
     })
   }
   )
@@ -151,7 +157,7 @@ delete(){
   });
 }
 edit(){
-  const{name,address,latitude,longitude,avatar,from_time,to_time}=this.state
+  const{name,address,latitude,longitude,avatar,from_time,to_time,phone}=this.state
   this.setState({
       loading:true
   })
@@ -163,7 +169,8 @@ edit(){
       longitude:longitude,
       avatar:avatar,
       from_time:from_time,
-      to_time:to_time
+      to_time:to_time,
+      phone:phone
   })
   .then(() => 
   {  
@@ -179,7 +186,8 @@ edit(){
       longitude:0.0,
       avatar:"",
       from_time:'',
-      to_time:''
+      to_time:'',
+      phone:''
     })
   }
   )
@@ -219,7 +227,8 @@ fileChangedHandler = (event) => {
                 selectedUid:null,
                 address:"",
                 latitude:0.0,
-                longitude:0.0
+                longitude:0.0,
+                phone:""
                 })} 
               variant="outline-success">
                 No
@@ -320,7 +329,20 @@ fileChangedHandler = (event) => {
         />
          </Col>           
          </Row>
-
+         <Row>
+         <Col>
+         <label>Phone</label>
+         </Col>
+         <Col>
+         <input
+            name="phone"
+            value={this.state.phone}
+            onChange={this.onChange}
+            type="tel"
+            placeholder="Phone"
+           />
+         </Col>           
+         </Row>
         </Container>
         </Modal.Body>
         <Modal.Footer>
@@ -337,7 +359,7 @@ fileChangedHandler = (event) => {
   }
   renderTableData() {
     return this.state.instructors && this.state.instructors.map((instructor, index) => {
-       const { id,name,address,latitude,longitude,avatar,from_time,to_time } = instructor //destructuring
+       const { id,name,address,latitude,longitude,avatar,from_time,to_time,phone } = instructor //destructuring
        let time = (from_time && to_time)?from_time +" to "+to_time:""
        console.log(instructor)
        return (
@@ -350,6 +372,7 @@ fileChangedHandler = (event) => {
              <td>{latitude}</td>
              <td>{longitude}</td>
              <td>{time}</td>
+             <td>{phone}</td>
              <td>
                <Button variant="primary" onClick={()=>
                this.setState({  
@@ -359,7 +382,10 @@ fileChangedHandler = (event) => {
                    address:address,
                    latitude:latitude,
                    longitude:longitude,
-                   avatar:avatar
+                   avatar:avatar,
+                   from_time:from_time,
+                   to_time:to_time,
+                   phone:phone
                    })} 
                   style={{marginRight:10}}>
                   Edit
