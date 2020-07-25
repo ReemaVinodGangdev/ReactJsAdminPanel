@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Button,Badge,Modal,Container,Row,Col } from 'react-bootstrap';
+import { Button,Badge,Modal,Container,Row,Col,Alert } from 'react-bootstrap';
 
 import { withFirebase } from '../Firebase';
 import './index.css'
@@ -24,7 +24,9 @@ class AdminPage extends Component {
       passwordOne: '',
       error: null,
       phone:'',
-      status:'active'
+      status:'active',
+      showAlert:false,
+      selectedUid:null
     };  
   }
  
@@ -57,14 +59,16 @@ class AdminPage extends Component {
           .user(authUser.user.uid)
           .set({
             "username":name,
+            "password":passwordOne,
             email,
             phone,
-            status,
+            status:"active",
 
           });
       })
       .then(authUser => {
         this.setState({ ...INITIAL_STATE,show:false });
+        console.log("User Created"+JSON.stringify(authUser))
         alert("User created successfully")
       })
       .catch(error => {
@@ -72,25 +76,87 @@ class AdminPage extends Component {
         this.setState({ error });
       });
  
-    event.preventDefault();
+     event.preventDefault();
   }
   componentWillUnmount() {
     this.props.firebase.users().off();
   }
   handleClose(){
     this.setState({
-      show:false
+      show:false,
+      selectedUid:null
     })
    }
    onChangeText = event => {
     this.setState({ [event.target.name]: event.target.value });
   };
   renderTableHeader() {
-    let header = ['uid','username','email','phone','status']
+    let header = ['Username','Email','Phone','Status','Action']
     return header.map((key, index) => {
        return <th key={index}>{key.toUpperCase()}</th>
     })
  }
+ delete(){  
+  this.setState({
+    loading:true
+    })
+    this.props.firebase.users().child("/"+this.state.selectedUid+"/")
+    .remove()
+    .then(() => 
+    {  
+      alert("Data successfully deleted")
+      this.setState({
+        show:false,
+        loading:false,
+        selectedUid:null,
+        name:"",
+        showAlert:false
+      })
+    }
+    )
+    .catch((error)=>{
+        console.log(error)
+        this.setState({
+          show:false,
+          loading:false
+        })
+    });
+ }
+ edit(id){
+  const { name, email, passwordOne,phone,status } = this.state;
+  this.setState({
+      loading:true
+  })
+  this.props.firebase.users().child("/"+this.state.selectedUid+"/")
+  .update({
+    "username":name,
+     "email": email,
+      "phone":phone,
+       "status" : status,
+  })
+  .then(() => 
+  {  
+    console.log("Data set")
+    alert("Data successfully set")
+    this.setState({
+      show:false,
+      loading:false,
+      selectedUid:null,
+      name:"",
+      "email": "",
+      "phone":"",
+       "status" : "",
+    })
+  }
+  )
+  .catch((error)=>{
+      console.log(error)
+      this.setState({
+        show:false,
+        loading:false
+      })
+  });
+}
   render() {
     const { users, loading } = this.state;
     return (
@@ -99,6 +165,27 @@ class AdminPage extends Component {
         <Button variant="primary" style={{marginLeft:20}} onClick={()=>this.setState({
           show:true
         })}>Add User</Button>{' '}
+        <Alert show={this.state.showAlert} variant="danger">
+            <Alert.Heading>Delete!</Alert.Heading>
+            <p>
+             Are you sure you want to delete ${this.state.name} ?
+            </p>
+            <hr />
+            <div className="d-flex justify-content-end">
+              <Button onClick={() => this.delete()} variant="outline-success">
+                Yes
+              </Button>
+              <Button 
+              onClick={() => this.setState({
+                showAlert:false,
+                name:"",
+                selectedUid:null
+                })} 
+              variant="outline-success">
+                No
+              </Button>
+            </div>
+          </Alert>
         {loading && <div>Loading ...</div>}
            <table id='students'>
                <tbody>
@@ -142,6 +229,8 @@ class AdminPage extends Component {
                 />
               </Col>
             </Row>
+            {this.state.selectedUid!=null?
+            null:
             <Row>
               <Col>
                 <label>Password</label>
@@ -157,6 +246,7 @@ class AdminPage extends Component {
                 />
               </Col>
             </Row>
+            }
             <Row>
               <Col>
                 <label>Phone</label>
@@ -178,7 +268,7 @@ class AdminPage extends Component {
           <Button variant="secondary" onClick={()=>this.handleClose()}>
             Close
           </Button>
-          <Button variant="primary" onClick={this.onSubmit}>
+          <Button variant="primary" onClick={(event)=>this.state.selectedUid?this.edit(event):this.onSubmit(event)}>
             Save Changes
           </Button>
         </Modal.Footer>
@@ -192,7 +282,7 @@ class AdminPage extends Component {
           .update({
             status:string
           }).then(result=>{
-            alert("User is now inactivated")
+           string=="Inactive"? alert("User is now inactivated"):alert("User is active now")
             this.callUserList()
           });
     
@@ -203,15 +293,36 @@ class AdminPage extends Component {
        const { uid, username, email, phone,status } = user //destructuring
        return (
           <tr key={uid}>
-             <td>{uid}</td>
              <td>{username}</td>
              <td>{email}</td>
              <td>{phone}</td>
              <td>{status=="active"?
-             <Button variant="primary" style={{marginLeft:20}} onClick={()=>this.makeUserInactive(uid,"Inactive")}>Inactive user</Button>
+             <Button variant="primary" style={{marginLeft:20}} onClick={()=>this.makeUserInactive(uid,"Inactive")}>Inactivate user</Button>
               :
-              <Button variant="danger" style={{marginLeft:20}} onClick={()=>this.makeUserInactive(uid,"active")}>{status}</Button>
+              <Button variant="danger" style={{marginLeft:20}} onClick={()=>this.makeUserInactive(uid,"active")}>Activate</Button>
              }</td>
+             <td>
+               <Button variant="primary" onClick={()=>
+               this.setState({  
+                   selectedUid:uid,
+                   show:true,
+                   name:username,
+                   email:email,
+                   phone:phone,
+                   status:status 
+                   })} 
+                  style={{marginRight:10}}>
+                  Edit
+                  </Button>
+               <Button variant="danger" onClick={()=>
+                  this.setState({
+                    selectedUid:uid,
+                    name:username,
+                    showAlert:true
+                  })
+               }>Delete</Button>
+             </td>
+
           </tr>
        )
     })

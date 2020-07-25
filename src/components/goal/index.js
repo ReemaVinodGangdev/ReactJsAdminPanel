@@ -83,7 +83,8 @@ class Goal extends Component {
  }
  handleClose(){
   this.setState({
-    show:false
+    show:false,
+    selectedUid:null
   })
  }
  onChange = event => {
