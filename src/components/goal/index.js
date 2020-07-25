@@ -97,7 +97,7 @@ class Goal extends Component {
         <Button variant="primary" style={{marginLeft:20}} onClick={()=>this.setState({
           show:true
         })}>Add Goal</Button>{' '}
-        <Alert show={this.state.showAlert} variant="success">
+        <Alert show={this.state.showAlert} variant="danger">
             <Alert.Heading>Delete!</Alert.Heading>
             <p>
              Are you sure you want to delete ${this.state.goal_name} ?

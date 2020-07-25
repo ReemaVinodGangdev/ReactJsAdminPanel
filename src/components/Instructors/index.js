@@ -202,7 +202,7 @@ fileChangedHandler = (event) => {
         <Button variant="primary" style={{marginLeft:20}} onClick={()=>this.setState({
           show:true
         })}>Add Instructor</Button>{' '}
-         <Alert show={this.state.showAlert} variant="success">
+         <Alert show={this.state.showAlert} variant="danger">
             <Alert.Heading>Delete!</Alert.Heading>
             <p>
              Are you sure you want to delete ${this.state.name} ?

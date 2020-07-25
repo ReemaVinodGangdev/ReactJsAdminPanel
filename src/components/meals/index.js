@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Button,Badge,Modal,Container,Row,Col } from 'react-bootstrap';
+import { Button,Badge,Modal,Container,Row,Col,Alert } from 'react-bootstrap';
 import { withFirebase } from '../Firebase';
 import './index.css'
 class Meals extends Component {
@@ -16,11 +16,14 @@ class Meals extends Component {
       latitude:0.0,
       longitude:0.0,
       meals:[],
+      showAlert:false,
      meal_content:{
        breakfast:[],
        lunch:[],
-       dinner:[]
-     }
+       dinner:[],
+       selectedUid:null,
+     },
+     meal_plan_title:""
     };
   }
  
@@ -41,9 +44,41 @@ class Meals extends Component {
     });
   }
   validation(){
-          
+    (this.state.selectedUid)?
+    this.editData():
    this.writeUserData()
   
+  }
+  editData(id){
+    const{meal_content,meal_plan_title}=this.state
+  
+    this.setState({
+        loading:true
+    })
+    this.props.firebase.meals().child("/"+this.state.selectedUid+"/")
+    .update({
+      label:meal_plan_title,
+      ingredients:meal_content
+    })
+    .then(() => 
+    {  
+      console.log("Data set")
+      alert("Data successfully edited")
+      this.setState({
+        show:false,
+        loading:false,
+        selectedUid:null,
+        meal_plan_title:""
+      })
+    }
+    )
+    .catch((error)=>{
+        console.log(error)
+        this.setState({
+          show:false,
+          loading:false
+        })
+    });
   }
   writeUserData(){
     const{meal_content}=this.state
@@ -53,7 +88,7 @@ class Meals extends Component {
     })
     this.props.firebase.meals()
     .push({
-      label:"Meal plan "+this.state.meals.length,
+      label:this.state.meal_plan_title,
       ingredients:meal_content
     })
     .then(() => 
@@ -140,6 +175,32 @@ onChangeText=(event,index,type,key)=>{
  })
 
 }
+delete(){
+  this.setState({
+      loading:true
+  })
+  this.props.firebase.meals().child("/"+this.state.selectedUid+"/")
+  .remove()
+  .then(() => 
+  {  
+    alert("Data successfully deleted")
+    this.setState({
+      show:false,
+      loading:false,
+      selectedUid:null,
+      meal_plan_title:"",
+      showAlert:false
+    })
+  }
+  )
+  .catch((error)=>{
+      console.log(error)
+      this.setState({
+        show:false,
+        loading:false
+      })
+  });
+}
  render() {
     const { users, loading,meal_content } = this.state;
     return (
@@ -148,12 +209,60 @@ onChangeText=(event,index,type,key)=>{
         <Button variant="primary" style={{marginLeft:20}} onClick={()=>this.setState({
           show:true
         })}>Add a Meal Plan</Button>{' '}
+        <Alert show={this.state.showAlert} variant="danger">
+            <Alert.Heading>Delete!</Alert.Heading>
+            <p>
+             Are you sure you want to delete ${this.state.meal_plan_title} ?
+            </p>
+            <hr />
+            <div className="d-flex justify-content-end">
+              <Button onClick={() => this.delete(false)} variant="outline-success">
+                Yes
+              </Button>
+              <Button 
+              onClick={() => this.setState({
+                showAlert:false,
+                meal_plan_title:"",
+                selectedUid:null
+                })} 
+              variant="outline-success">
+                No
+              </Button>
+            </div>
+          </Alert>
         {loading && <div>Loading ...</div>}
         {
           this.state.meals && this.state.meals.map((meal,index)=>{
+            console.log(meal)
             return(
               <div key={index}>
+              <Row style={{marginTop:10}}>
+              <Col>
                 <h1>{meal.label}</h1>
+              </Col>
+              <Col>
+              
+               <Button variant="primary" onClick={()=>
+               this.setState({  
+                   selectedUid:meal.id,
+                   show:true,
+                   meal_plan_title:meal.label,
+                   meal_content: meal.ingredients
+                   })} 
+                  style={{marginRight:10}}>
+                  Edit
+                  </Button>
+               <Button variant="danger" onClick={()=>
+                  this.setState({
+                    selectedUid:meal.id,
+                    meal_plan_title:meal.label,
+                    showAlert:true
+                  })
+               }>Delete</Button>
+             
+              </Col>
+              </Row>
+                
                 <label>Breakfast</label>
                 <table id='students'>
                 <tbody>
@@ -186,8 +295,20 @@ onChangeText=(event,index,type,key)=>{
         </Modal.Header>
         <Modal.Body>
          <Container style={{alignItems:'center'}}>
-       
-
+         <Row>
+           <Col>
+              <label>Title</label>
+           </Col>
+           <Col>
+           <input 
+                          name="meal_plan_title"
+                          value={this.state.meal_plan_title}
+                          onChange={this.onChange}
+                          type="text"
+                          placeholder="Meal Plan Title"
+           />
+           </Col>
+         </Row>
          <h3>Breakfast</h3>
          <table id='students'>
                <tbody>
