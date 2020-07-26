@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Button,Badge,Modal,Container,Row,Col,Alert } from 'react-bootstrap';
+import { Button,Badge,Modal,Container,Row,Col,Alert,Image } from 'react-bootstrap';
 import { withFirebase } from '../Firebase';
 import './index.css'
 class Meals extends Component {
@@ -42,6 +42,20 @@ class Meals extends Component {
         loading: false,
       });
     });
+  }
+  refreshData(){
+    this.props.firebase.meals().on('value', snapshot => {
+      const mealsObj =snapshot.val();
+  
+      const mealList =mealsObj && Object.keys(mealsObj).map(key => ({
+        ...mealsObj[key],
+        id:key
+      }));
+    this.setState({
+      meals: mealList,
+      loading: false,
+    });
+  });
   }
   validation(){
     (this.state.selectedUid)?
@@ -113,7 +127,7 @@ class Meals extends Component {
     this.props.firebase.users().off();
   }
   renderTableHeader() {
-    let header = ['Quantity','Name','Calories']
+    let header = ['Picture','Quantity','Name','Calories']
     return header.map((key, index) => {
        return <th key={index}>{key.toUpperCase()}</th>
     })
@@ -122,6 +136,7 @@ class Meals extends Component {
   this.setState({
     show:false
   })
+  this.refreshData()
  }
  onChange = event => {
   this.setState({ [event.target.name]: event.target.value });
@@ -161,12 +176,13 @@ onAddRow=(item)=>{
   }
 }
 onChangeText=(event,index,type,key)=>{
+  
   console.log(event.target.name)
   console.log(index)
   let meal_content = this.state.meal_content
  let ingredients=  meal_content[type]
  let obj = ingredients[index]
- let new_obj = Object.assign({}, obj, { [key]: event.target.value })
+ let new_obj = Object.assign({}, obj, { [key]: key=="avatar"? URL.createObjectURL(event.target.files[0]):event.target.value })
 
  meal_content[type][index]=new_obj
  console.log(meal_content)
@@ -317,6 +333,12 @@ delete(){
                     meal_content.breakfast && meal_content.breakfast.map((source,index)=>{
                       return(
                     <tr>
+                    <div className="center">
+                      <Image src={source.avatar?source.avatar:require('../../assets/image_placeholder.png')} roundedCircle style={{height:50,width:50}}/>
+                    </div>
+                    <div className='center'>
+                        <input type="file" onChange={(event)=>this.onChangeText(event,index,"breakfast","avatar")} accept="image/*"/>
+                    </div>
                       <td>
                         <input 
                           name="quantity"
@@ -361,6 +383,12 @@ delete(){
                     meal_content.lunch && meal_content.lunch.map((source,index)=>{
                       return(
                     <tr>
+                    <div className="center">
+                      <Image src={source.avatar?source.avatar:require('../../assets/image_placeholder.png')} roundedCircle style={{height:50,width:50}}/>
+                    </div>
+                    <div className='center'>
+                        <input type="file" onChange={(event)=>this.onChangeText(event,index,"lunch","avatar")} accept="image/*"/>
+                    </div>
                       <td>
                         <input 
                           name="quantity"
@@ -405,6 +433,12 @@ delete(){
                     meal_content.dinner && meal_content.dinner.map((source,index)=>{
                       return(
                     <tr>
+                    <div className="center">
+                      <Image src={source.avatar?source.avatar:require('../../assets/image_placeholder.png')} roundedCircle style={{height:50,width:50}}/>
+                    </div>
+                    <div className='center'>
+                        <input type="file" onChange={(event)=>this.onChangeText(event,index,"dinner","avatar")} accept="image/*"/>
+                    </div>
                       <td>
                         <input 
                           name="quantity"
@@ -455,6 +489,9 @@ delete(){
       </div>
     );
   }
+  fileChangedHandler = (event) => {
+    this.setState({ avatar: URL.createObjectURL(event.target.files[0]) })
+  }
   renderTableData(ar_ingredients) {
  console.log(ar_ingredients)
     return ar_ingredients && ar_ingredients.map((meal, index) => {
@@ -462,6 +499,10 @@ delete(){
     
        return (
           <tr key={index}>
+           <td>
+              <Image src={meal.avatar?meal.avatar:require('../../assets/placeholder_meal.jpg')} roundedCircle style={{height:50,width:50}}/>
+            </td>
+            
              <td>{quantity}</td>
              <td>{name}</td>
              <td>{calories}</td>
