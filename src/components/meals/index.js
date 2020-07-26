@@ -23,7 +23,8 @@ class Meals extends Component {
        dinner:[],
        selectedUid:null,
      },
-     meal_plan_title:""
+     meal_plan_title:"",
+     progress:0
     };
   }
  
@@ -141,6 +142,34 @@ class Meals extends Component {
  onChange = event => {
   this.setState({ [event.target.name]: event.target.value });
 };
+handleUpload = (event,index,type,key) => {
+let image = event.target.files[0]
+  const uploadTask = this.props.firebase.images().child(`/${image.name}`).put(image);
+  uploadTask.on(
+    "state_changed",
+    snapshot => {
+      // progress function ...
+      const progress = Math.round(
+        (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+      );
+      this.setState({ progress });
+    },
+    error => {
+      // Error function ...
+      console.log(error);
+    },
+    () => {
+      // complete function ...
+      this.props.firebase.images()
+        .child(image.name)
+        .getDownloadURL()
+        .then(url => {
+       //   this.setState({ "avatar":url });
+          this.onChangeText(event,index,type,key,url)
+        });
+    }
+  );
+};
 onAddRow=(item)=>{
   //item =0-> breakfast, 1=> lunch, 2=> dinner
   let obj = {
@@ -175,14 +204,12 @@ onAddRow=(item)=>{
     })
   }
 }
-onChangeText=(event,index,type,key)=>{
-  
-  console.log(event.target.name)
-  console.log(index)
+onChangeText=(event,index,type,key,url)=>{
+ 
   let meal_content = this.state.meal_content
  let ingredients=  meal_content[type]
  let obj = ingredients[index]
- let new_obj = Object.assign({}, obj, { [key]: key=="avatar"? URL.createObjectURL(event.target.files[0]):event.target.value })
+ let new_obj = Object.assign({}, obj, { [key]: key=="avatar"?url:event.target.value })
 
  meal_content[type][index]=new_obj
  console.log(meal_content)
@@ -333,11 +360,16 @@ delete(){
                     meal_content.breakfast && meal_content.breakfast.map((source,index)=>{
                       return(
                     <tr>
+                   
                     <div className="center">
                       <Image src={source.avatar?source.avatar:require('../../assets/image_placeholder.png')} roundedCircle style={{height:50,width:50}}/>
                     </div>
                     <div className='center'>
-                        <input type="file" onChange={(event)=>this.onChangeText(event,index,"breakfast","avatar")} accept="image/*"/>
+                        <input type="file" onChange={
+                          (event)=>
+                          this.handleUpload(event,index,"breakfast","avatar")
+                        } 
+                        accept="image/*"/>
                     </div>
                       <td>
                         <input 
@@ -387,7 +419,9 @@ delete(){
                       <Image src={source.avatar?source.avatar:require('../../assets/image_placeholder.png')} roundedCircle style={{height:50,width:50}}/>
                     </div>
                     <div className='center'>
-                        <input type="file" onChange={(event)=>this.onChangeText(event,index,"lunch","avatar")} accept="image/*"/>
+                        <input type="file" onChange={(event)=>
+                        this.handleUpload(event,index,"lunch","avatar")
+                        } accept="image/*"/>
                     </div>
                       <td>
                         <input 
@@ -437,7 +471,9 @@ delete(){
                       <Image src={source.avatar?source.avatar:require('../../assets/image_placeholder.png')} roundedCircle style={{height:50,width:50}}/>
                     </div>
                     <div className='center'>
-                        <input type="file" onChange={(event)=>this.onChangeText(event,index,"dinner","avatar")} accept="image/*"/>
+                        <input type="file" onChange={(event)=>
+                        this.handleUpload(event,index,"dinner","avatar")
+                        } accept="image/*"/>
                     </div>
                       <td>
                         <input 
