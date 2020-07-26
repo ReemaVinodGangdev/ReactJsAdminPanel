@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Button,Badge,Modal,Container,Row,Col,Image,
 Alert } from 'react-bootstrap';
 import TimePicker from 'react-time-picker';
-
+import {storage} from 'firebase'
 import { withFirebase } from '../Firebase';
 import './index.css'
 class Instructor extends Component {
@@ -187,7 +187,8 @@ edit(){
       avatar:"",
       from_time:'',
       to_time:'',
-      phone:''
+      phone:'',
+      progress: 0
     })
   }
   )
@@ -200,13 +201,42 @@ edit(){
   });
 }
 fileChangedHandler = (event) => {
-  this.setState({ avatar: URL.createObjectURL(event.target.files[0]) })
+  this.setState({ uri: URL.createObjectURL(event.target.files[0]) })
+  this.handleUpload(event.target.files[0])
 }
+handleUpload = (image) => {
+
+  const uploadTask = this.props.firebase.images().child(`/${image.name}`).put(image);
+  uploadTask.on(
+    "state_changed",
+    snapshot => {
+      // progress function ...
+      const progress = Math.round(
+        (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+      );
+      this.setState({ progress });
+    },
+    error => {
+      // Error function ...
+      console.log(error);
+    },
+    () => {
+      // complete function ...
+      this.props.firebase.images()
+        .child(image.name)
+        .getDownloadURL()
+        .then(url => {
+          this.setState({ "avatar":url });
+        });
+    }
+  );
+};
  render() {
     const { users, loading } = this.state;
     return (
       <div style={{flexDirection:'column',marginLeft:20}}>
         <h1>Instructor</h1>
+        
         <Button variant="primary" style={{marginLeft:20}} onClick={()=>this.setState({
           show:true
         })}>Add Instructor</Button>{' '}
@@ -249,7 +279,12 @@ fileChangedHandler = (event) => {
         </Modal.Header>
         <Modal.Body>
          <Container style={{alignItems:'center'}}>
-  
+         {this.state.progress!=0 ?
+        <div className="center">
+          <progress value={this.state.progress} max="100" className="progress" style={{marginBottom:10}}/>
+        </div>
+        :null
+         }
            <div className="center">
               <Image src={this.state.avatar?this.state.avatar:require('../../assets/image_placeholder.png')} roundedCircle style={{height:50,width:50}}/>
             </div>

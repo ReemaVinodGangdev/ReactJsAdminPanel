@@ -1,6 +1,7 @@
 import app from 'firebase/app';
 import 'firebase/auth';
 import 'firebase/database';
+import 'firebase/storage'
 
   const config = {
     apiKey: "AIzaSyBSmSnzQJSgHx58WkvZz1S2L0cwQ5rGzEw",
@@ -17,6 +18,7 @@ import 'firebase/database';
       app.initializeApp(config);
       this.auth = app.auth();
       this.db = app.database();
+      this.storage= app.storage();
     }
   // *** Auth API ***
  
@@ -42,7 +44,8 @@ import 'firebase/database';
 
  instructors=()=>this.db.ref('instructors');
  meals=()=>this.db.ref('meals');
-  goals=()=>this.db.ref('goals');
+ goals=()=>this.db.ref('goals');
+ images=()=>this.storage.ref('images');
   }
 
   
